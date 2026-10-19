@@ -28,5 +28,8 @@
   },
   "integrity_note": {
     "Description": "Data integrity explanation; no lost samples are synthesized."
+  },
+  "integrity_interval_units": {
+    "Description": "Units for the added BAD integrity interval only: s (seconds). Original trigger onset values and their original sample-unit metadata are preserved; they are not silently reinterpreted or corrected by this repair."
   }
 }

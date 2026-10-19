@@ -95,7 +95,7 @@ def repair(row):
         fields[fields.index('description')] = 'integrity_note'
         for value in values:
             value['integrity_note'] = value.pop('description')
-    for field in ('trial_type', 'channel', 'integrity_note'):
+    for field in ('trial_type', 'channel', 'integrity_note', 'integrity_interval_units'):
         if field not in fields:
             fields.append(field)
     for value in values:
@@ -110,12 +110,15 @@ def repair(row):
         if 'event_name' in fields:
             event['event_name'] = label
         values.insert(0, event)
+    for value in values:
+        value['integrity_interval_units'] = 's' if value['trial_type'] == label else 'n/a'
     with events.open('w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fields, delimiter='\t', lineterminator='\n'); writer.writeheader(); writer.writerows(values)
     event_json = events.with_suffix('.json')
     meta = json.loads(event_json.read_text()) if event_json.exists() else {}
     meta.pop('description', None)
     meta.update(trial_type={'Description': 'Original event_name, or BAD_Fz_header_overlap for unrecoverable source bytes.'}, channel={'Description': 'Channel affected by the BAD interval; n/a for original events.'}, integrity_note={'Description': 'Data integrity explanation; no lost samples are synthesized.'})
+    meta['integrity_interval_units'] = {'Description': 'Units for the added BAD integrity interval only: s (seconds). Original trigger onset values and their original sample-unit metadata are preserved; they are not silently reinterpreted or corrected by this repair.'}
     event_json.write_text(json.dumps(meta, indent=2)+'\n')
     size = dest.stat().st_size; sha = digest(dest)
     return dict(row, size=size, sha256=sha, annex_key=f'SHA256E-s{size}--{sha}.bdf', staged_path=str(dest), lost_samples=lost, bad_duration_s=lost/500, original_header_field=old, signal_bytes_unchanged=True)
@@ -150,6 +153,11 @@ def verify(row):
                 out[reader] = dict(ok=True, n_times=n, sfreq=sf, nchan=int(raw.info['nchan']), seconds=n/sf, first_last_finite=True, bad=bad, warnings=[str(w.message)[:500] for w in warns])
         except Exception as exc:
             out[reader] = dict(ok=False, error=repr(exc), traceback=traceback.format_exc())
+    if row['dataset'] == 'on004306':
+        # EEGDash normalizes datfile in place. Restore original SET metadata so
+        # the retained staging tree matches the pointer-only local branch.
+        shutil.copy2(CACHE / row['dataset'] / row['rel'], path)
+        out['original_set_restored_after_reader_normalization'] = True
     return out
 
 
