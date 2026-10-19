@@ -1,3 +1,8 @@
+Unreleased 2026-10-19 (local repair branch; not published)
+  - Correct header size/alignment in 59 BDF files. Preserve every source payload byte; no replacement samples, interpolation or zero padding.
+  - Mark unrecoverable first 256 or 342 Fz samples (0.512 or 0.684 seconds at 500 Hz) as BAD_Fz_header_overlap in events.tsv with channel Fz. Original event rows/times are unchanged.
+  - Repaired binary payloads are annex-ready on Expanse only; new SHA256E keys/sizes and two-reader proof are recorded in code/fix-20261019-manifest.json.
+
 2.0.1 2021-05-05
   - Updated Readme information on participants
 2.0.0 2021-05-05
